@@ -15,34 +15,38 @@ const SUPABASE_ANON_KEY = 'sb_publishable_INhIJQjd4RE3Qvifa-V-GQ_mJaK3GDb';
 
 let supabaseClient = null;
 
+function showConnectionBanner(message, isError){
+  const existing = document.getElementById('supabaseStatusBanner');
+  if(existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'supabaseStatusBanner';
+  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:12px 16px;' +
+    'font-family:sans-serif;font-size:13px;text-align:center;color:#fff;' +
+    (isError ? 'background:#C0392B;' : 'background:#1F7A4D;');
+  banner.innerHTML = message + ' <span style="text-decoration:underline;cursor:pointer;margin-left:10px;" onclick="document.getElementById(\'supabaseStatusBanner\').remove()">fermer</span>';
+  document.body.appendChild(banner);
+}
+
 (function initSupabase(){
   if(SUPABASE_URL.startsWith('REMPLACEZ') || SUPABASE_ANON_KEY.startsWith('REMPLACEZ')){
-    console.warn(
-      '[Bellsonpro-Academy] Supabase n\'est pas encore configuré.\n' +
-      'Ouvrez script.js et remplacez SUPABASE_URL et SUPABASE_ANON_KEY par les ' +
-      'valeurs de votre projet (Project Settings → API dans le tableau de bord Supabase).'
-    );
+    showConnectionBanner('⚠️ Supabase non configuré : ouvrez script.js et remplacez SUPABASE_URL / SUPABASE_ANON_KEY.', true);
     return;
   }
   if(typeof window.supabase === 'undefined'){
-    console.error('[Bellsonpro-Academy] La librairie Supabase ne s\'est pas chargée (vérifiez la connexion internet ou le CDN).');
+    showConnectionBanner('❌ La librairie Supabase ne s\'est pas chargée (vérifiez que la ligne <script src=".../supabase-js@2"> est bien présente et chargée AVANT script.js dans index.html).', true);
     return;
   }
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.log('[Bellsonpro-Academy] Client Supabase initialisé.');
 
-  // Petit test de connexion (facultatif) : vérifie que la table "settings"
-  // créée par supabase-schema.sql est bien accessible.
   supabaseClient
     .from('settings')
     .select('key')
     .limit(1)
     .then(({ data, error }) => {
       if(error){
-        console.error('[Bellsonpro-Academy] Connexion Supabase établie, mais la requête de test a échoué :', error.message);
-        console.error('→ Vérifiez que vous avez bien exécuté supabase-schema.sql dans le SQL Editor.');
+        showConnectionBanner('⚠️ Connexion Supabase établie, mais la table "settings" n\'a pas été trouvée (' + error.message + '). Avez-vous exécuté supabase-schema.sql dans le SQL Editor ?', true);
       } else {
-        console.log('[Bellsonpro-Academy] Connexion Supabase OK, base de données accessible ✓', data);
+        showConnectionBanner('✅ Connexion Supabase réussie — la base de données répond correctement.', false);
       }
     });
 })();
